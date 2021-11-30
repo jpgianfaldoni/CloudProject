@@ -10,7 +10,7 @@ def add_user(URL, username, password1, password2,cookies):
     return r2
 
 
-def delete_user(user_id, cookies):
+def delete_user(user_id, cookies, lb_url):
     URL_delete = f"http://{lb_url}/admin/auth/user/{user_id}/delete/"
     client = requests.session()
     client.get(URL_delete)  # sets cookie
@@ -29,7 +29,7 @@ def add_group(URL, groupname ,cookies):
     return r2
 
 
-def delete_group(group_id, cookies):
+def delete_group(group_id, cookies, lb_url):
     URL_delete = f"http://{lb_url}/admin/auth/group/{group_id}/delete/"
     client = requests.session()
     client.get(URL_delete)  # sets cookie

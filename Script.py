@@ -14,15 +14,15 @@ def delete_everything(instance_ohio, security_group, autoscaling, django_img, el
     instance_ohio[0].terminate()
     instance_ohio[0].wait_until_terminated()
     security_group.delete()
-    time.sleep(10)
+    time.sleep(35)
     autoscaling.delete_auto_scaling_group(AutoScalingGroupName ='AutoScalingV1', ForceDelete = True)
-    time.sleep(10)
+    time.sleep(35)
     django_img.deregister()
-    time.sleep(10)
+    time.sleep(35)
     elb.delete_load_balancer(LoadBalancerArn= lb_arn)
-    time.sleep(30)
+    time.sleep(35)
     elb.delete_target_group(TargetGroupArn= tg_arn)
-    time.sleep(30)
+    time.sleep(35)
     autoscaling.delete_launch_configuration(LaunchConfigurationName ='LCV999')
     time.sleep(90)
     security_group2.delete()
@@ -58,7 +58,7 @@ sudo systemctl restart mysql
 #Security Groups
 security_group = ohio_ec2.create_security_group(
     Description='string',
-    GroupName='SecurityGroup7',
+    GroupName='SecurityGroupSQL',
     TagSpecifications=[
         {
             'ResourceType': 'security-group',
@@ -74,14 +74,14 @@ security_group = ohio_ec2.create_security_group(
 
 security_group2 = north_virginia_ec2.create_security_group(
     Description='string',
-    GroupName='SecurityGroup7',
+    GroupName='SecurityGroupDjango2',
     TagSpecifications=[
         {
             'ResourceType': 'security-group',
             'Tags': [
                 {
                     'Key': 'Name',
-                    'Value': 'mysql'
+                    'Value': 'Django'
                 },
             ]
         },
@@ -90,8 +90,12 @@ security_group2 = north_virginia_ec2.create_security_group(
 
 
 
-security_group.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=0,ToPort=10000)
-security_group2.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=0,ToPort=10000)
+
+security_group.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=3306,ToPort=3306)
+security_group.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=22,ToPort=22)
+security_group2.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=8080,ToPort=8080)
+security_group2.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=22,ToPort=22)
+security_group2.authorize_ingress(IpProtocol="tcp",CidrIp="0.0.0.0/0",FromPort=80,ToPort=80)
 print("Security Groups Created")
 
 
@@ -223,6 +227,8 @@ create_autoscaling_response = autoscaling.create_auto_scaling_group(
     ]
 )
 print("ACG Created")
+
+
 #Create Target Group
 create_target_response = elb.create_target_group(
     Name='Tgroup5',
@@ -286,6 +292,24 @@ listener_response = elb.create_listener(
     Port = 80,
     Protocol = 'HTTP',
 )
+lba_arn_policy = lb_arn.split(':')[-1].split('/')[1:]
+tga_arn_policy = tg_arn.split(':')[-1]
+resource_label = f"{'/'.join(lba_arn_policy)}/{tga_arn_policy}"
+print(f"Resource_label = {resource_label}")
+
+scaling_policy_response = autoscaling.put_scaling_policy(
+    AutoScalingGroupName='AutoScalingV1',
+    PolicyName='AutoScalingV1-Policy',
+    PolicyType='TargetTrackingScaling',
+    TargetTrackingConfiguration={
+        'PredefinedMetricSpecification': {
+            'PredefinedMetricType': 'ALBRequestCountPerTarget',
+            'ResourceLabel': resource_label,
+        },
+        'TargetValue': 100.0,
+    },
+)
+
 
 #Load Balancer URLs
 lb_url = create_lb_response['LoadBalancers'][0]['DNSName']

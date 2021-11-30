@@ -5,6 +5,7 @@ from RequestFunctions import add_user, delete_user, add_group, delete_group
 f = open("URLS.txt", "r")
 lb_url = f.read()
 URL = f'http://{lb_url}/admin/login/?next=/admin/'
+print(URL)
 URL_add_user = f"http://{lb_url}/admin/auth/user/add/"
 URL_add_group = f"http://{lb_url}/admin/auth/group/add/"
 
@@ -46,7 +47,7 @@ while not finish:
     elif option == 2:
         print("Choose the id of the user you want to delete:")
         user_id = int(input())
-        delete_user(user_id, cookies)
+        delete_user(user_id, cookies, lb_url)
         print(f"User deleted")
 
     elif option == 3:
@@ -58,7 +59,7 @@ while not finish:
     elif option == 4:
         print("Choose the id of the group you want to delete:")
         group_id = int(input())
-        delete_group(group_id, cookies)
+        delete_group(group_id, cookies, lb_url)
         print(f"Group deleted")
     
     print("Do you want to continue? y/n")
